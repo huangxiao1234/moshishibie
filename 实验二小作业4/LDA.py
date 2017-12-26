@@ -6,7 +6,7 @@ import operator
 import matplotlib
 import matplotlib.pyplot as plt
 import sympy
-
+#袁俊一签到
 
 def getdata(filename):
     f  = open(filename)
