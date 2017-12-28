@@ -50,6 +50,8 @@ def duoweiclassifier(x,mansls,girls,xianyan1,xianyan2):
     p = y*xianyan1/px#后验概率
     return p
 
+
+
 def compare(p1,p2):
     if p1>=p2:
         return True
@@ -95,7 +97,10 @@ def ROC(prediction,test):
             FN=FN+1
         elif prediction[i]==0 and test[i]==1:
             FP=FP+1
-    return TP/(TP+FN),FP/(FP+TN)
+
+    if (FP+TN)==0:
+        return TP/(TP+FN),0
+    return TP/(TP+FN),FP / (FP + TN)
 
 
 #----------一维正太-----------------------------
@@ -160,6 +165,7 @@ def ROC(prediction,test):
 # plt.show()
 
 #-----------三维作图求交线--------------------------
+#
 # x=[]
 # y=[]
 # z=[]
@@ -198,28 +204,33 @@ def ROC(prediction,test):
 # plt.plot(x,y)
 # plt.show()
 #-----------------------------------------------------------------
-testdata,testlabels = getdata('boy82.txt')#如果要预测女孩，那么要将getdata里的labels设置成0
-mansls,manslabels = getdata('boy.txt')
-girls,girlslabels = getdata('girl.txt')
-alldata=testdata+girls
-alllabels=testlabels+[0]*np.shape(girls)[0]
-x=[]
-y=[]
-print(alllabels)
-for j in np.arange(0.1,1,0.1):
-    xianyan1=j
-    xianyan2=1-j
-    testls = []
-    for i in range(np.shape(alldata)[0]):
-        prediction = duoweiclassifier(alldata[i][0:2],mansls,girls,0.5,0.5)
-        if prediction>j:
-            testls.append(1)
-        else:
-            testls.append(0)
-    print(testls)
-    r1,r2=ROC(testls,alllabels)
-    x.append(r1)
-    y.append(r2)
-plt.plot(y,x)
-plt.show()
+if __name__ == '__main__':
+
+    testdata,testlabels = getdata('boy82.txt')#如果要预测女孩，那么要将getdata里的labels设置成0
+    mansls,manslabels = getdata('boy.txt')
+    girls,girlslabels = getdata('girl.txt')
+    alldata=testdata+girls
+    alllabels=testlabels+[0]*np.shape(girls)[0]
+    x=[]
+    y=[]
+
+    for j in np.arange(0,1,0.01):
+        xianyan1=j
+        xianyan2=1-j
+        testls = []
+        for i in range(np.shape(alldata)[0]):
+            prediction = duoweiclassifier(alldata[i][0:2],mansls,girls,0.5,0.5)
+            if prediction>j:
+                testls.append(1)
+            else:
+                testls.append(0)
+
+        r1,r2=ROC(testls,alllabels)
+        x.append(r1)
+        y.append(r2)
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+
+    plt.plot(y,x)
+    plt.show()
 
