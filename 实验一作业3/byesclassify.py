@@ -81,6 +81,20 @@ def duoweicanshu(testdata):
     thu= s_in/nums
     return mu,thu
 
+def parzen(alldata,x,h):
+    n=alldata.shape[0]
+    print(n)
+    a=[]
+    b=0
+    print(alldata[0])
+    for j in range(n):#遍历每个样本
+        if abs((alldata[j]-x)/h) <= 0.5:#方窗
+            q=1
+        else:
+            q=0
+        b=q+b
+    return b/n
+
 def ROC(prediction,test):
     TP=0#预测真为真
     FP=0#预测真为假
@@ -219,7 +233,6 @@ if __name__ == '__main__':
         xianyan2=1-j
         testls = []
         for i in range(np.shape(alldata)[0]):
-            prediction = duoweiclassifier(alldata[i][0:2],mansls,girls,0.5,0.5)
             if prediction>j:
                 testls.append(1)
             else:
@@ -230,7 +243,27 @@ if __name__ == '__main__':
         y.append(r2)
     plt.xlim(0,1)
     plt.ylim(0,1)
-
-    plt.plot(y,x)
+    plt.plot(y, x)
     plt.show()
+
+    #-------------------------parzen方窗测试-------------------------
+    mansls, manslabels = getdata('boy.txt')
+    x=[]
+    y=[]
+    alldata = np.sort(np.array(mansls)[:, 0])
+    for i in range ((np.array(mansls)[:,0]).shape[0]):
+
+
+        y.append(parzen(alldata,alldata[i],10))
+        x.append(alldata[i])
+
+
+    plt.plot(x,y)
+    plt.show()
+
+
+
+
+
+
 

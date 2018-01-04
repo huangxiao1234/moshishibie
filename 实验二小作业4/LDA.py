@@ -147,6 +147,7 @@ def predict(data, w, mean1, mean2):
 
 groupboy,l=getdata('boy.txt')
 groupgirl,ls =getdata('girl.txt')
+print(groupboy)
 w,mean1,mean2,group1,group2= train(groupboy,groupgirl)
 drawcompare(w,mean1,mean2,group1,group2,groupboy,groupgirl)
 
