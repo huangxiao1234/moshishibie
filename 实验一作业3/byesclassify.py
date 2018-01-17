@@ -5,43 +5,79 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import math
 
-def getdata(filename):
-    f  = open(filename)
+def getdata(filename1,classnumber):
+    '''
+    导入单个txt文件，将其转成列表
+    :param filename1: 文件名
+    :param classnumber: 将其判为哪一类，0or1
+    :return: 生成好的data,labels
+    '''
+    f  = open(filename1)
     lines  = f.readlines()
     mansls= []
     for line in lines:
         a=line.split()
         a= [float(i) for i in a ]
         mansls.append(a)
-    # labels = np.zeros(np.shape(ls)[0])
     manslabels= [1]*np.shape(mansls)[0]
     return mansls,manslabels
 
 
 def canshu(data):
+    '''
+    用于获得贝叶斯分类所需要的参数
+    :param data: 原始数据列表
+    :return: 身高、体重、鞋码的均值和方差
+    '''
     manmeans = np.mean(data,axis=0)
     height=manmeans[0]#身高均值
     weight = manmeans[1]#体重均值
     shoesize = manmeans[2]#鞋码均值
-
     m = data - manmeans#xi-均值
-
     mvar = np.var(data,axis=0)
-
     hvar,wvar,svar = mvar[0:3]#方差，男生对应正态分布的参数
     return height,weight,shoesize,hvar,wvar,svar
 
-def zhengtaifenbu(x1,x,z):
-    return stats.norm.pdf(x1,x,math.sqrt(z))
+def zhengtaifenbu(x1,mean,var):
+    '''
+    一维正态分布函数
+    :param x1: X值
+    :param x: 均值参数
+    :param z: 方差参数
+    :return:x对应的Y
+    '''
+    return stats.norm.pdf(x1,mean,math.sqrt(var))
 
-def byesclassfier(m1,m2,g1,g2,x,w1,w2):#求出x为w1的后验概率，w2的则为1-w1,m1,m2,g1,g2分别为男女对应正态分布参数，x为输入,w1,w2,分别为两类的先验概率
-    p2 = zhengtaifenbu(x,m1,m2)#类条件概率p(x|w1)
-    px2 = zhengtaifenbu(x,g1,g2)*w2
-    px = px2+p2*w1#p(x)
-    p = p2*w1/px#后验概率
+def byesclassfier(manmean,manvar,girlmean,girlvar,x,w1xianyan,w2xianyan):
+    '''
+    一维正态分布分类
+    求出x为w1的后验概率，w2的则为1-w1
+    贝叶斯公式的实现
+    :param manmean:男生样本均值
+    :param manvar:男生样本方差
+    :param girlmean:女生
+    :param girlvar:女生方差
+    :param x: 要预测的值
+    :param w1xianyan: w1的先验概率
+    :param w2xianyan: w2的先验概率
+    :return:
+    '''
+    p2 = zhengtaifenbu(x,manmean,manvar)#类条件概率p(x|w1)
+    px2 = zhengtaifenbu(x,girlmean,girlvar)*w2xianyan
+    px = px2+p2*w1xianyan#p(x)
+    p = p2*w1xianyan/px#后验概率
     return p
 
 def duoweiclassifier(x,mansls,girls,xianyan1,xianyan2):
+    '''
+    多维正态分布分类
+    :param x: 输入向量
+    :param mansls: 男生数据样本
+    :param girls: 女生数据样本
+    :param xianyan1: w1先验概率
+    :param xianyan2: w2先验概率
+    :return:
+    '''
     mu,thu=duoweicanshu(mansls)#通过函数求得两个变量值
     mu1,thu1=duoweicanshu(girls)
     y =duoweizhengtai(x,mu,thu)#p(x|w1)
@@ -49,8 +85,6 @@ def duoweiclassifier(x,mansls,girls,xianyan1,xianyan2):
     px = y*xianyan1+y1*xianyan2#p(x)
     p = y*xianyan1/px#后验概率
     return p
-
-
 
 def compare(p1,p2):
     if p1>=p2:
@@ -67,10 +101,22 @@ def accurcy(predict,test):
     return count/n
 
 def duoweizhengtai(x,mu,thu):
+    '''
+    多维正态分布
+    :param x: 输入向量
+    :param mu: 均值向量
+    :param thu: 方差向量
+    :return: X对应的正态分布值
+    '''
     return multivariate_normal.pdf(x, mean=np.array(mu.T)[0], cov=thu.T)
 
 def duoweicanshu(testdata):
-    data1=np.mat(np.array(testdata)[:,0:2].T)
+    '''
+    求多维正太分布需要的参数
+    :param testdata: 数据集
+    :return: 均值向量，方差向量
+    '''
+    data1=np.mat(np.array(testdata)[:,0:2].T)#这里选的是样本里面前两个特征值，若要修改则手动将[:,0:2]变成[:,1:3]
     dimens, nums = data1.shape[:2]
     mu =  np.mean(data1, axis=1)
     k=data1-mu
@@ -82,6 +128,14 @@ def duoweicanshu(testdata):
     return mu,thu
 
 def parzen(alldata,x,h):
+    '''
+    parzen窗的实现，用的方窗
+
+    :param alldata:所有数据集
+    :param x: 窗的距离
+    :param h: 窗的高度
+    :return:
+    '''
     n=alldata.shape[0]
     print(n)
     a=[]
@@ -95,31 +149,40 @@ def parzen(alldata,x,h):
         b=q+b
     return b/n
 
-def ROC(prediction,test):
+def ROC(prediction,test,trueclass,flaseclass):
+    '''
+
+    :param prediction: 预测标志
+    :param test: 真实标志
+    :param trueclass: 视为真的类别值
+    :param flaseclass: 视为假的类别值
+    :return:
+    '''
+    #这里写的字母表示意义与教材的不一致，因此后面计算真阳率时不能用书上的公式
     TP=0#预测真为真
-    FP=0#预测真为假
-    FN=0#预测假为真
+    FN=0#预测真为假
+    FP=0#预测假为真
     TN=0#预测假为假
 
     for i in range(np.shape(test)[0]):
         print(TP,TN,FN,FP)
-        if prediction[i]==1 and test[i]==1:
+        if prediction[i]==trueclass and test[i]==trueclass:
             TP=TP+1
-        elif prediction[i]==0 and test[i]==0:
+        elif prediction[i]==flaseclass and test[i]==flaseclass:
             TN=TN+1
-        elif prediction[i]==1 and test[i]==0:
-            FN=FN+1
-        elif prediction[i]==0 and test[i]==1:
+        elif prediction[i]==trueclass and test[i]==flaseclass:
             FP=FP+1
+        elif prediction[i]==flaseclass and test[i]==trueclass:
+            FN=FN+1
 
-    if (FP+TN)==0:
+    if (FP+TN)==0:#因为样本选取可能没有假例，此时预测假为假的TN值永远为零，当FP也为零时，分母为零，报错，这样做为了防止报错，因此最好不要用只有一类的样本集
         return TP/(TP+FN),0
     return TP/(TP+FN),FP / (FP + TN)
 
 
 #----------一维正太-----------------------------
-# mansls,manslabels = getdata('boy.txt')
-# girls,girlslabels = getdata('girl.txt')
+# mansls,manslabels = getdata('boy.txt'，0)
+# girls,girlslabels = getdata('girl.txt'，1)
 # height1,weight1,shoesize1,hvar1,wvar1,svar1 = canshu(mansls)
 # height,weight,shoesize,hvar,wvar,svar = canshu(girls)
 # xianyan1=0.8
@@ -220,25 +283,24 @@ def ROC(prediction,test):
 #-----------------------------------------------------------------
 if __name__ == '__main__':
 
-    testdata,testlabels = getdata('boy82.txt')#如果要预测女孩，那么要将getdata里的labels设置成0
-    mansls,manslabels = getdata('boy.txt')
-    girls,girlslabels = getdata('girl.txt')
-    alldata=testdata+girls
-    alllabels=testlabels+[0]*np.shape(girls)[0]
+    testdata,testlabels = getdata('boy82.txt',1)#男孩标1，女孩标0
+    mansls,manslabels = getdata('boy.txt',1)
+    girls,girlslabels = getdata('girl.txt',0)
+    testdata.extend(girls)#为了使测试样本更全面，直接把训练集女孩跟boy82加在一起当测试集来用
+    testlabels.extend([0]*np.shape(girls)[0])
     x=[]
     y=[]
-
+    #预测测试集
     for j in np.arange(0,1,0.01):
-        xianyan1=j
-        xianyan2=1-j
-        testls = []
-        for i in range(np.shape(alldata)[0]):
+        testls = []#预测结果labels
+        for i in range(np.shape(testdata)[0]):
+            prediction = duoweiclassifier(testdata[i][0:2],mansls,girls,0.5,0.5)
             if prediction>j:
                 testls.append(1)
             else:
                 testls.append(0)
 
-        r1,r2=ROC(testls,alllabels)
+        r1,r2=ROC(testls,testlabels,0,1)#把女孩视为真
         x.append(r1)
         y.append(r2)
     plt.xlim(0,1)
@@ -247,19 +309,19 @@ if __name__ == '__main__':
     plt.show()
 
     #-------------------------parzen方窗测试-------------------------
-    mansls, manslabels = getdata('boy.txt')
-    x=[]
-    y=[]
-    alldata = np.sort(np.array(mansls)[:, 0])
-    for i in range ((np.array(mansls)[:,0]).shape[0]):
-
-
-        y.append(parzen(alldata,alldata[i],10))
-        x.append(alldata[i])
-
-
-    plt.plot(x,y)
-    plt.show()
+    # mansls, manslabels = getdata('boy.txt')
+    # x=[]
+    # y=[]
+    # alldata = np.sort(np.array(mansls)[:, 0])
+    # for i in range ((np.array(mansls)[:,0]).shape[0]):
+    #
+    #
+    #     y.append(parzen(alldata,alldata[i],10))
+    #     x.append(alldata[i])
+    #
+    #
+    # plt.plot(x,y)
+    # plt.show()
 
 
 
