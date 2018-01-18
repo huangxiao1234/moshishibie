@@ -19,7 +19,7 @@ def getdata(filename1,classnumber):
         a=line.split()
         a= [float(i) for i in a ]
         mansls.append(a)
-    manslabels= [1]*np.shape(mansls)[0]
+    manslabels= [classnumber]*np.shape(mansls)[0]
     return mansls,manslabels
 
 
